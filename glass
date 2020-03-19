@@ -1,0 +1,38 @@
+glass<-read.csv("C:/Users/blacksnake/Downloads/glass.csv")
+prop.table(table(glass$Type))*100
+glass$Type<-factor(glass$Type,levels= c("1","2","3","4","5","6","7"),labels = c("building_windows_float_processed","building_windows_non_float_processed","vehicle_windows_float_processed","vehicle_windows_non_float_processed","containers","tableware","headlamps"))
+round(prop.table(table(glass$Type))*100,digits = 1)
+
+normalize<-function(x){
+  return((x-min(x))/(max(x)-min(x)))
+}
+glass_n<-as.data.frame(lapply(glass[1:9], normalize))
+glass_n1<-cbind(glass_n,glass$Type)
+
+glass_train<-glass_n[1:198,]
+glass_test<-glass_n[199:214,]
+
+glass_test_labels<-glass[199:214,1]
+
+install.packages("class")
+library(class)
+
+install.packages("gmodels")
+glass_train_labels<-glass[1:198,1]
+library(gmodels)
+
+glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=1)
+CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+
+glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=3)
+CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+
+glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=7)
+CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+
+glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=10)
+CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+
+glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=13)
+CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+
