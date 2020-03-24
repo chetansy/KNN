@@ -1,38 +1,53 @@
 glass<-read.csv("C:/Users/blacksnake/Downloads/glass.csv")
-prop.table(table(glass$Type))*100
-glass$Type<-factor(glass$Type,levels= c("1","2","3","4","5","6","7"),labels = c("building_windows_float_processed","building_windows_non_float_processed","vehicle_windows_float_processed","vehicle_windows_non_float_processed","containers","tableware","headlamps"))
+prop.table(table(glass$Type))
+
+glass$Type<-factor(glass$Type,levels= c("1","2","3","5","6","7"),labels = c("building_windows_float_processed","building_windows_non_float_processed","vehicle_windows_float_processed","containers","tableware","headlamps"))
 round(prop.table(table(glass$Type))*100,digits = 1)
 
 normalize<-function(x){
   return((x-min(x))/(max(x)-min(x)))
 }
+
 glass_n<-as.data.frame(lapply(glass[1:9], normalize))
 glass_n1<-cbind(glass_n,glass$Type)
 
 glass_train<-glass_n[1:198,]
 glass_test<-glass_n[199:214,]
 
-glass_test_labels<-glass[199:214,1]
+glass_train_labels<-glass[1:198,10]
+glass_test_labels<-glass[199:214,10]
 
-install.packages("class")
+#install.packages("class")
 library(class)
 
-install.packages("gmodels")
-glass_train_labels<-glass[1:198,1]
+#install.packages("gmodels")
 library(gmodels)
 
-glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=1)
-CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+test_acc <- NULL
+train_acc <- NULL
+for (i in seq(3,200,2))
+{
+  train_glass_pred <- knn(train=glass_train,test=glass_train,cl=glass_train_labels,k=i)
+  train_acc <- c(train_acc,mean(train_glass_pred==glass_train_labels))
+  test_glass_pred <- knn(train = glass_train, test = glass_test, cl = glass_train_labels, k=i)
+  test_acc <- c(test_acc,mean(test_glass_pred==glass_test_labels))
+}
 
-glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=3)
-CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
 
-glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=7)
-CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
 
-glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=10)
-CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+par(mfrow=c(1,2)) # c(1,2) => indicates 1 row and 2 columns
+plot(seq(3,200,2),train_acc,type="l",main="Train_accuracy",col="blue")
+plot(seq(3,200,2),test_acc,type="l",main="Test_accuracy",col="red")
 
-glass_test_pred<-knn(train=glass_train,test = glass_test,cl=glass_train_labels,k=13)
-CrossTable(x=glass_test_labels,y=glass_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+acc_neigh_df <- data.frame(list(train_acc=train_acc,test_acc=test_acc,neigh=seq(3,200,2)))
+
+install.packages("ggplot2")
+library(ggplot2)
+ggplot(acc_neigh_df,aes(x=neigh))+
+  geom_line(aes(y=train_acc,colour="train_acc"),lwd=1.5)+
+  geom_line(aes(y=test_acc,colour="test_acc"),lwd=1.5)+
+  scale_fill_manual(" ",breaks=c("train_acc","test_acc"),values = c("train_acc"="green","test_acc"="red"))
+
+
+glass_pred <- knn(train = glass_train, test = glass_test, cl = glass_train_labels, k=14)
 
