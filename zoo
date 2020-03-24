@@ -9,24 +9,48 @@ normalize<-function(x){
   return((x-min(x))/(max(x)-min(x)))
 }
 
-zoo_n<-as.data.frame(lapply(zoo[2:18],normalize))
+zoo_n<-as.data.frame(lapply(zoo[2:17],normalize))
+
 zoo_n1<-cbind(zoo_n,zoo$animal.name)
+zoo_n1
+zoo_train<-zoo_n[1:81,]
+zoo_test<-zoo_n[82:101,]
 
-zoo_train<-zoo_n[1:89,]
-zoo_test<-zoo_n[90:101,]
+zoo_train_labels<-zoo[1:81,18]
+zoo_train_labels
+zoo_test_labels<-zoo[82:101,18]
 
-zoo_train_labels<-zoo[1:89,1]
-zoo_test_labels<-zoo[90:101,1]
-
-install.packages("class")
+#install.packages("class")
 library(class)
 
-zoo_test_pred<-knn(train=zoo_train,test = zoo_test,cl=zoo_train_labels,k=1)
-
-install.packages("gmodels")
+#install.packages("gmodels")
 library(gmodels)
-CrossTable(x=zoo_test_labels,y=zoo_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r= FALSE)
 
-zoo_test_pred<-knn(train=zoo_train,test = zoo_test,cl=zoo_train_labels,k=5)
-CrossTable(x=zoo_test_labels,y=zoo_test_pred,prop.chisq = FALSE,prop.c = FALSE,prop.r= FALSE)
+test_acc <- NULL
+train_acc <- NULL
+for (i in seq(2,80,4))
+{
+  train_zoo_pred <- knn(train=zoo_train,test=zoo_train,cl=zoo_train_labels,k=i)
+  train_acc <- c(train_acc,mean(train_zoo_pred==zoo_train_labels))
+  test_zoo_pred <- knn(train = zoo_train, test = zoo_test, cl = zoo_train_labels, k=i)
+  test_acc <- c(test_acc,mean(test_zoo_pred==zoo_test_labels))
+}
 
+
+
+par(mfrow=c(1,2)) # c(1,2) => indicates 1 row and 2 columns
+plot(seq(2,80,4),train_acc,type="l",main="Train_accuracy",col="blue")
+plot(seq(2,80,4),test_acc,type="l",main="Test_accuracy",col="red")
+
+acc_neigh_df <- data.frame(list(train_acc=train_acc,test_acc=test_acc,neigh=seq(2,80,4)))
+
+#install.packages("ggplot2")
+library(ggplot2)
+ggplot(acc_neigh_df,aes(x=neigh))+
+  geom_line(aes(y=train_acc,colour="train_acc"),lwd=1.5)+
+  geom_line(aes(y=test_acc,colour="test_acc"),lwd=1.5)+
+  scale_fill_manual(" ",breaks=c("train_acc","test_acc"),values = c("train_acc"="green","test_acc"="red"))
+
+
+zoo_pred <- knn(train = zoo_train, test = zoo_test, cl = zoo_train_labels, k=8)
+zoo_pred
